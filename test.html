@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Blog API Test</h1>
+    <p>This page tests if your blog API endpoints are working correctly.</p>
+    
+    <div class="test-section">
+        <h3>1. Health Check</h3>
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <div id="health-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Get Posts</h3>
+        <button onclick="testGetPosts()">Test Get Posts</button>
+        <div id="posts-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Create Post</h3>
+        <button onclick="testCreatePost()">Test Create Post</button>
+        <div id="create-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Get Stats</h3>
+        <button onclick="testGetStats()">Test Get Stats</button>
+        <div id="stats-result"></div>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            try {
+                const response = await fetch(`${baseUrl}/health`);
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success"><h4>✅ Success!</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Error</h4><pre>${error.message}</pre></div>`;
+            }
+        }
+        
+        async function testGetPosts() {
+            const resultDiv = document.getElementById('posts-result');
+            try {
+                const response = await fetch(`${baseUrl}/api/posts`);
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success"><h4>✅ Success!</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Error</h4><pre>${error.message}</pre></div>`;
+            }
+        }
+        
+        async function testCreatePost() {
+            const resultDiv = document.getElementById('create-result');
+            try {
+                const response = await fetch(`${baseUrl}/api/posts`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: 'Test Post',
+                        content: 'This is a test post created by the API test.',
+                        author: 'Test User',
+                        tags: 'test, api'
+                    })
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success"><h4>✅ Success!</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Error</h4><pre>${error.message}</pre></div>`;
+            }
+        }
+        
+        async function testGetStats() {
+            const resultDiv = document.getElementById('stats-result');
+            try {
+                const response = await fetch(`${baseUrl}/api/stats`);
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success"><h4>✅ Success!</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Error</h4><pre>${error.message}</pre></div>`;
+            }
+        }
+    </script>
+</body>
+</html> 
