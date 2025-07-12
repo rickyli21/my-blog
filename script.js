@@ -1,17 +1,17 @@
-// Blog functionality for GitHub Pages (static version)
-class StaticBlog {
+// Blog functionality with shared backend
+class SharedBlog {
     constructor() {
-        this.posts = JSON.parse(localStorage.getItem('blogPosts')) || [];
+        this.posts = [];
         this.editingPostId = null;
+        this.apiBase = window.location.origin + '/api';
         this.init();
     }
 
-    init() {
+    async init() {
         this.setupNavigation();
         this.setupFormHandling();
-        this.displayPosts();
+        await this.loadPosts();
         this.updateStats();
-        this.addSamplePosts();
     }
 
     setupNavigation() {
@@ -39,17 +39,17 @@ class StaticBlog {
 
     setupFormHandling() {
         const form = document.getElementById('post-form');
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (this.editingPostId) {
-                this.updatePost();
+                await this.updatePost();
             } else {
-                this.createPost();
+                await this.createPost();
             }
         });
     }
 
-    createPost() {
+    async createPost() {
         const title = document.getElementById('post-title').value.trim();
         const content = document.getElementById('post-content').value.trim();
         const tags = document.getElementById('post-tags').value.trim();
@@ -60,30 +60,42 @@ class StaticBlog {
             return;
         }
 
-        const post = {
-            id: Date.now(),
-            title: title,
-            content: content,
-            author: author,
-            tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
-            date: new Date().toISOString(),
-            wordCount: content.split(/\s+/).length
-        };
+        try {
+            const response = await fetch(`${this.apiBase}/posts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title,
+                    content,
+                    tags,
+                    author
+                })
+            });
 
-        this.posts.unshift(post); // Add to beginning
-        this.savePosts();
-        this.displayPosts();
-        this.updateStats();
-        this.resetForm();
-        
-        // Switch to timeline view
-        document.querySelector('[data-section="timeline"]').click();
-        
-        // Show success message
-        this.showNotification('Post published successfully!');
+            if (response.ok) {
+                const newPost = await response.json();
+                this.posts.unshift(newPost);
+                this.displayPosts();
+                this.updateStats();
+                this.resetForm();
+                
+                // Switch to timeline view
+                document.querySelector('[data-section="timeline"]').click();
+                
+                this.showNotification('Post published successfully!');
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.error}`);
+            }
+        } catch (error) {
+            console.error('Error creating post:', error);
+            alert('Failed to create post. Please try again.');
+        }
     }
 
-    updatePost() {
+    async updatePost() {
         const title = document.getElementById('post-title').value.trim();
         const content = document.getElementById('post-content').value.trim();
         const tags = document.getElementById('post-tags').value.trim();
@@ -93,35 +105,46 @@ class StaticBlog {
             return;
         }
 
-        const postIndex = this.posts.findIndex(post => post.id === this.editingPostId);
-        if (postIndex === -1) {
-            alert('Post not found.');
-            return;
+        try {
+            const response = await fetch(`${this.apiBase}/posts/${this.editingPostId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title,
+                    content,
+                    tags
+                })
+            });
+
+            if (response.ok) {
+                const updatedPost = await response.json();
+                const postIndex = this.posts.findIndex(post => post.id === this.editingPostId);
+                if (postIndex !== -1) {
+                    this.posts[postIndex] = updatedPost;
+                }
+                
+                this.displayPosts();
+                this.updateStats();
+                this.resetForm();
+                this.editingPostId = null;
+                
+                // Switch to timeline view
+                document.querySelector('[data-section="timeline"]').click();
+                
+                this.showNotification('Post updated successfully!');
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.error}`);
+            }
+        } catch (error) {
+            console.error('Error updating post:', error);
+            alert('Failed to update post. Please try again.');
         }
-
-        // Update the post
-        this.posts[postIndex] = {
-            ...this.posts[postIndex],
-            title: title,
-            content: content,
-            tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
-            wordCount: content.split(/\s+/).length
-        };
-
-        this.savePosts();
-        this.displayPosts();
-        this.updateStats();
-        this.resetForm();
-        this.editingPostId = null;
-        
-        // Switch to timeline view
-        document.querySelector('[data-section="timeline"]').click();
-        
-        // Show success message
-        this.showNotification('Post updated successfully!');
     }
 
-    editPost(postId) {
+    async editPost(postId) {
         const post = this.posts.find(p => p.id === postId);
         if (!post) return;
 
@@ -146,17 +169,43 @@ class StaticBlog {
         document.getElementById('post-title').focus();
     }
 
-    deletePost(postId) {
+    async deletePost(postId) {
         if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
             return;
         }
 
-        this.posts = this.posts.filter(post => post.id !== postId);
-        this.savePosts();
-        this.displayPosts();
-        this.updateStats();
-        
-        this.showNotification('Post deleted successfully!');
+        try {
+            const response = await fetch(`${this.apiBase}/posts/${postId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                this.posts = this.posts.filter(post => post.id !== postId);
+                this.displayPosts();
+                this.updateStats();
+                this.showNotification('Post deleted successfully!');
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.error}`);
+            }
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            alert('Failed to delete post. Please try again.');
+        }
+    }
+
+    async loadPosts() {
+        try {
+            const response = await fetch(`${this.apiBase}/posts`);
+            if (response.ok) {
+                this.posts = await response.json();
+                this.displayPosts();
+            } else {
+                console.error('Failed to load posts');
+            }
+        } catch (error) {
+            console.error('Error loading posts:', error);
+        }
     }
 
     displayPosts() {
@@ -234,23 +283,23 @@ class StaticBlog {
         return div.innerHTML;
     }
 
-    updateStats() {
-        const totalPosts = this.posts.length;
-        const totalWords = this.posts.reduce((sum, post) => sum + post.wordCount, 0);
-        const uniqueAuthors = [...new Set(this.posts.map(post => post.author))].length;
-        
-        document.getElementById('total-posts').textContent = totalPosts;
-        document.getElementById('total-words').textContent = totalWords;
-        
-        // Add unique authors stat if element exists
-        const uniqueAuthorsElement = document.getElementById('unique-authors');
-        if (uniqueAuthorsElement) {
-            uniqueAuthorsElement.textContent = uniqueAuthors;
+    async updateStats() {
+        try {
+            const response = await fetch(`${this.apiBase}/stats`);
+            if (response.ok) {
+                const stats = await response.json();
+                document.getElementById('total-posts').textContent = stats.totalPosts;
+                document.getElementById('total-words').textContent = stats.totalWords;
+                
+                // Add unique authors stat if element exists
+                const uniqueAuthorsElement = document.getElementById('unique-authors');
+                if (uniqueAuthorsElement) {
+                    uniqueAuthorsElement.textContent = stats.uniqueAuthors;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading stats:', error);
         }
-    }
-
-    savePosts() {
-        localStorage.setItem('blogPosts', JSON.stringify(this.posts));
     }
 
     resetForm() {
@@ -303,42 +352,11 @@ class StaticBlog {
             }, 300);
         }, 3000);
     }
-
-    addSamplePosts() {
-        // Only add sample posts if no posts exist
-        if (this.posts.length === 0) {
-            const samplePosts = [
-                {
-                    id: Date.now() - 2,
-                    title: "Welcome to Our Shared Blog",
-                    content: "This is a shared blog where everyone can post and see each other's posts.\n\nFeel free to share your thoughts, experiences, and ideas here. This is a community space for everyone to contribute to.\n\nHappy blogging!",
-                    author: "Admin",
-                    tags: ["welcome", "community", "blogging"],
-                    date: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-                    wordCount: 45
-                },
-                {
-                    id: Date.now() - 1,
-                    title: "The Power of Shared Stories",
-                    content: "When we share our stories, we create connections that transcend boundaries.\n\nThis blog is a space where diverse voices can come together, share experiences, and learn from each other.\n\nWhat story will you share today?",
-                    author: "Admin",
-                    tags: ["stories", "community", "connection"],
-                    date: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
-                    wordCount: 38
-                }
-            ];
-            
-            this.posts = samplePosts;
-            this.savePosts();
-            this.displayPosts();
-            this.updateStats();
-        }
-    }
 }
 
 // Initialize the blog when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    new StaticBlog();
+    new SharedBlog();
 });
 
 // Add some keyboard shortcuts
