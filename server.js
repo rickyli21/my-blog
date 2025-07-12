@@ -19,26 +19,7 @@ const DB_FILE = 'posts.json';
 function initializeDB() {
     if (!fs.existsSync(DB_FILE)) {
         const initialData = {
-            posts: [
-                {
-                    id: Date.now() - 2,
-                    title: "Welcome to Our Shared Blog",
-                    content: "This is a shared blog where everyone can post and see each other's posts.\n\nFeel free to share your thoughts, experiences, and ideas here. This is a community space for everyone to contribute to.\n\nHappy blogging!",
-                    author: "Admin",
-                    tags: ["welcome", "community", "blogging"],
-                    date: new Date(Date.now() - 86400000).toISOString(),
-                    wordCount: 45
-                },
-                {
-                    id: Date.now() - 1,
-                    title: "The Power of Shared Stories",
-                    content: "When we share our stories, we create connections that transcend boundaries.\n\nThis blog is a space where diverse voices can come together, share experiences, and learn from each other.\n\nWhat story will you share today?",
-                    author: "Admin",
-                    tags: ["stories", "community", "connection"],
-                    date: new Date(Date.now() - 43200000).toISOString(),
-                    wordCount: 38
-                }
-            ]
+            posts: []
         };
         fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2));
     }
