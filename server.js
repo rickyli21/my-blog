@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const fs = require('fs');
+const { MongoClient } = require('mongodb');
 const path = require('path');
 
 const app = express();
@@ -12,55 +12,73 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// Database file
-const DB_FILE = path.join(__dirname, 'posts.json');
+// MongoDB connection
+const MONGODB_URI = 'mongodb+srv://rickyli2100:HelloWorld@cluster0.scwe7jv.mongodb.net/blog?retryWrites=true&w=majority&appName=Cluster0';
+const client = new MongoClient(MONGODB_URI);
 
-// Initialize database if it doesn't exist
-function initializeDB() {
-    if (!fs.existsSync(DB_FILE)) {
-        const initialData = {
-            posts: []
-        };
-        fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2));
-    }
-}
+// Database and collection names
+const DB_NAME = 'blog';
+const COLLECTION_NAME = 'posts';
 
-// Read posts from database
-function readPosts() {
+// Connect to MongoDB
+async function connectToMongo() {
     try {
-        const data = fs.readFileSync(DB_FILE, 'utf8');
-        return JSON.parse(data);
+        await client.connect();
+        console.log('Connected to MongoDB');
+        
+        // Create database and collection if they don't exist
+        const db = client.db(DB_NAME);
+        const collection = db.collection(COLLECTION_NAME);
+        
+        // Check if collection is empty and add sample posts
+        const count = await collection.countDocuments();
+        if (count === 0) {
+            const samplePosts = [
+                {
+                    id: Date.now() - 2,
+                    title: "Welcome to Our Shared Blog",
+                    content: "This is a shared blog where everyone can post and see each other's posts.\n\nFeel free to share your thoughts, experiences, and ideas here. This is a community space for everyone to contribute to.\n\nHappy blogging!",
+                    author: "Admin",
+                    tags: ["welcome", "community", "blogging"],
+                    date: new Date(Date.now() - 86400000).toISOString(),
+                    wordCount: 45
+                },
+                {
+                    id: Date.now() - 1,
+                    title: "The Power of Shared Stories",
+                    content: "When we share our stories, we create connections that transcend boundaries.\n\nThis blog is a space where diverse voices can come together, share experiences, and learn from each other.\n\nWhat story will you share today?",
+                    author: "Admin",
+                    tags: ["stories", "community", "connection"],
+                    date: new Date(Date.now() - 43200000).toISOString(),
+                    wordCount: 38
+                }
+            ];
+            
+            await collection.insertMany(samplePosts);
+            console.log('Added sample posts to database');
+        }
     } catch (error) {
-        console.error('Error reading posts:', error);
-        return { posts: [] };
-    }
-}
-
-// Write posts to database
-function writePosts(data) {
-    try {
-        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-        return true;
-    } catch (error) {
-        console.error('Error writing posts:', error);
-        return false;
+        console.error('Error connecting to MongoDB:', error);
     }
 }
 
 // API Routes
 
 // Get all posts
-app.get('/api/posts', (req, res) => {
+app.get('/api/posts', async (req, res) => {
     try {
-        const data = readPosts();
-        res.json(data.posts);
+        const db = client.db(DB_NAME);
+        const collection = db.collection(COLLECTION_NAME);
+        const posts = await collection.find({}).sort({ date: -1 }).toArray();
+        res.json(posts);
     } catch (error) {
+        console.error('Error fetching posts:', error);
         res.status(500).json({ error: 'Failed to fetch posts' });
     }
 });
 
 // Create a new post
-app.post('/api/posts', (req, res) => {
+app.post('/api/posts', async (req, res) => {
     try {
         const { title, content, tags, author } = req.body;
         
@@ -68,7 +86,9 @@ app.post('/api/posts', (req, res) => {
             return res.status(400).json({ error: 'Title and content are required' });
         }
 
-        const data = readPosts();
+        const db = client.db(DB_NAME);
+        const collection = db.collection(COLLECTION_NAME);
+        
         const newPost = {
             id: Date.now(),
             title: title.trim(),
@@ -79,20 +99,16 @@ app.post('/api/posts', (req, res) => {
             wordCount: content.trim().split(/\s+/).length
         };
 
-        data.posts.unshift(newPost);
-        
-        if (writePosts(data)) {
-            res.status(201).json(newPost);
-        } else {
-            res.status(500).json({ error: 'Failed to save post' });
-        }
+        await collection.insertOne(newPost);
+        res.status(201).json(newPost);
     } catch (error) {
+        console.error('Error creating post:', error);
         res.status(500).json({ error: 'Failed to create post' });
     }
 });
 
 // Update a post
-app.put('/api/posts/:id', (req, res) => {
+app.put('/api/posts/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { title, content, tags } = req.body;
@@ -101,61 +117,63 @@ app.put('/api/posts/:id', (req, res) => {
             return res.status(400).json({ error: 'Title and content are required' });
         }
 
-        const data = readPosts();
-        const postIndex = data.posts.findIndex(post => post.id == id);
+        const db = client.db(DB_NAME);
+        const collection = db.collection(COLLECTION_NAME);
         
-        if (postIndex === -1) {
+        const result = await collection.findOneAndUpdate(
+            { id: parseInt(id) },
+            {
+                $set: {
+                    title: title.trim(),
+                    content: content.trim(),
+                    tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
+                    wordCount: content.trim().split(/\s+/).length
+                }
+            },
+            { returnDocument: 'after' }
+        );
+
+        if (!result.value) {
             return res.status(404).json({ error: 'Post not found' });
         }
 
-        data.posts[postIndex] = {
-            ...data.posts[postIndex],
-            title: title.trim(),
-            content: content.trim(),
-            tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
-            wordCount: content.trim().split(/\s+/).length
-        };
-
-        if (writePosts(data)) {
-            res.json(data.posts[postIndex]);
-        } else {
-            res.status(500).json({ error: 'Failed to update post' });
-        }
+        res.json(result.value);
     } catch (error) {
+        console.error('Error updating post:', error);
         res.status(500).json({ error: 'Failed to update post' });
     }
 });
 
 // Delete a post
-app.delete('/api/posts/:id', (req, res) => {
+app.delete('/api/posts/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const data = readPosts();
-        const postIndex = data.posts.findIndex(post => post.id == id);
+        const db = client.db(DB_NAME);
+        const collection = db.collection(COLLECTION_NAME);
         
-        if (postIndex === -1) {
+        const result = await collection.deleteOne({ id: parseInt(id) });
+        
+        if (result.deletedCount === 0) {
             return res.status(404).json({ error: 'Post not found' });
         }
 
-        data.posts.splice(postIndex, 1);
-        
-        if (writePosts(data)) {
-            res.json({ message: 'Post deleted successfully' });
-        } else {
-            res.status(500).json({ error: 'Failed to delete post' });
-        }
+        res.json({ message: 'Post deleted successfully' });
     } catch (error) {
+        console.error('Error deleting post:', error);
         res.status(500).json({ error: 'Failed to delete post' });
     }
 });
 
 // Get blog statistics
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
     try {
-        const data = readPosts();
-        const totalPosts = data.posts.length;
-        const totalWords = data.posts.reduce((sum, post) => sum + post.wordCount, 0);
-        const uniqueAuthors = [...new Set(data.posts.map(post => post.author))].length;
+        const db = client.db(DB_NAME);
+        const collection = db.collection(COLLECTION_NAME);
+        
+        const totalPosts = await collection.countDocuments();
+        const posts = await collection.find({}).toArray();
+        const totalWords = posts.reduce((sum, post) => sum + post.wordCount, 0);
+        const uniqueAuthors = [...new Set(posts.map(post => post.author))].length;
         
         res.json({
             totalPosts,
@@ -163,6 +181,7 @@ app.get('/api/stats', (req, res) => {
             uniqueAuthors
         });
     } catch (error) {
+        console.error('Error fetching statistics:', error);
         res.status(500).json({ error: 'Failed to fetch statistics' });
     }
 });
@@ -173,9 +192,11 @@ app.get('/', (req, res) => {
 });
 
 // Initialize database and start server
-initializeDB();
-
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`Your shared blog is now live!`);
+connectToMongo().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+        console.log(`Your shared blog is now live with MongoDB!`);
+    });
+}).catch(error => {
+    console.error('Failed to connect to MongoDB:', error);
 }); 
