@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static('public'));
+app.use(express.static(__dirname));
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://rickyli2100:HelloWorld@cluster0.scwe7jv.mongodb.net/blog?retryWrites=true&w=majority&appName=Cluster0';
