@@ -150,6 +150,11 @@ body {
     font-weight: bold;
 }
 
+.post-author {
+    font-style: italic;
+    color: #4a90e2;
+}
+
 .post-tags {
     display: flex;
     gap: 8px;

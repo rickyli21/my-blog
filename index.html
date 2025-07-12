@@ -38,6 +38,10 @@
                         <input type="text" id="post-title" name="title" required>
                     </div>
                     <div class="form-group">
+                        <label for="post-author">Your Name (optional)</label>
+                        <input type="text" id="post-author" name="author" placeholder="Anonymous">
+                    </div>
+                    <div class="form-group">
                         <label for="post-content">Content</label>
                         <textarea id="post-content" name="content" rows="10" required></textarea>
                     </div>
@@ -53,7 +57,8 @@
             <section id="about" class="content-section">
                 <h2 class="section-title">About This Blog</h2>
                 <div class="about-content">
-                    <p>Welcome to my personal corner of the internet. This is where I share my thoughts, experiences, and whatever crosses my mind.</p>
+                    <p>Welcome to our shared community blog! This is a space where everyone can contribute their thoughts, experiences, and ideas.</p>
+                    <p>All posts are shared publicly and visible to everyone who visits this blog. Feel free to add your voice to the conversation!</p>
                     <div class="blog-stats">
                         <div class="stat">
                             <span class="stat-number" id="total-posts">0</span>
@@ -63,13 +68,17 @@
                             <span class="stat-number" id="total-words">0</span>
                             <span class="stat-label">Words</span>
                         </div>
+                        <div class="stat">
+                            <span class="stat-number" id="unique-authors">0</span>
+                            <span class="stat-label">Authors</span>
+                        </div>
                     </div>
                 </div>
             </section>
         </main>
 
         <footer class="blog-footer">
-            <p>&copy; 2024 My Retro Blog. Built with HTML, CSS, and JavaScript.</p>
+            <p>&copy; 2024 My Blog. Built with HTML, CSS, JavaScript, and Node.js.</p>
         </footer>
     </div>
 
