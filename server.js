@@ -13,15 +13,15 @@ app.use(bodyParser.json());
 app.use(express.static('public'));
 
 // MongoDB connection
-const MONGODB_URI = 'mongodb+srv://rickyli2100:HelloWorld@cluster0.scwe7jv.mongodb.net/blog?retryWrites=true&w=majority&appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://rickyli2100:HelloWorld@cluster0.scwe7jv.mongodb.net/blog?retryWrites=true&w=majority&appName=Cluster0';
 const client = new MongoClient(MONGODB_URI, {
-    ssl: true,
-    tls: true,
-    tlsAllowInvalidCertificates: false,
-    tlsAllowInvalidHostnames: false,
-    serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 10000,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 15000,
+    connectTimeoutMS: 20000,
     socketTimeoutMS: 45000,
+    maxPoolSize: 5,
+    minPoolSize: 1,
 });
 
 // Database and collection names
@@ -37,16 +37,25 @@ async function connectToMongo() {
     let retries = 3;
     while (retries > 0) {
         try {
+            console.log(`Attempting to connect to MongoDB (attempt ${4 - retries}/3)...`);
+            console.log('Connection string:', MONGODB_URI.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')); // Hide credentials
+            
             await client.connect();
             console.log('Connected to MongoDB successfully!');
             isMongoConnected = true;
             
-            // Create database and collection if they don't exist
+            // Test the connection
             const db = client.db(DB_NAME);
+            await db.admin().ping();
+            console.log('Database ping successful!');
+            
+            // Create database and collection if they don't exist
             const collection = db.collection(COLLECTION_NAME);
             
             // Check if collection is empty and add sample posts
             const count = await collection.countDocuments();
+            console.log(`Found ${count} existing posts in database`);
+            
             if (count === 0) {
                 const samplePosts = [
                     {
@@ -74,15 +83,20 @@ async function connectToMongo() {
             }
             return; // Success, exit the retry loop
         } catch (error) {
-            console.error(`MongoDB connection attempt ${4 - retries} failed:`, error.message);
+            console.error(`MongoDB connection attempt ${4 - retries} failed:`);
+            console.error('Error type:', error.constructor.name);
+            console.error('Error message:', error.message);
+            console.error('Error code:', error.code);
+            console.error('Full error:', error);
             retries--;
             
             if (retries === 0) {
                 console.error('Failed to connect to MongoDB after all retries. Starting server without database connection.');
                 console.error('The blog will work but posts will not be saved permanently.');
+                console.error('Using fallback in-memory storage.');
             } else {
-                console.log(`Retrying in 2 seconds... (${retries} attempts left)`);
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                console.log(`Retrying in 3 seconds... (${retries} attempts left)`);
+                await new Promise(resolve => setTimeout(resolve, 3000));
             }
         }
     }
@@ -270,6 +284,16 @@ app.get('/api/stats', async (req, res) => {
 // Serve the main page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        mongoConnected: isMongoConnected,
+        postsInMemory: inMemoryPosts.length
+    });
 });
 
 // Initialize database and start server
