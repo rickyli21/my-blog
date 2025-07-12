@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Blog</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="blog-header">
+            <h1 class="blog-title">My Blog</h1>
+            <p class="blog-subtitle">Random walks</p>
+        </header>
+
+        <nav class="blog-nav">
+            <button class="nav-btn active" data-section="timeline">Timeline</button>
+            <button class="nav-btn" data-section="new-post">New Post</button>
+            <button class="nav-btn" data-section="about">About</button>
+        </nav>
+
+        <main class="blog-content">
+            <!-- Timeline Section -->
+            <section id="timeline" class="content-section active">
+                <h2 class="section-title">Latest Posts</h2>
+                <div id="posts-container" class="posts-container">
+                    <!-- Posts will be dynamically added here -->
+                </div>
+            </section>
+
+            <!-- New Post Section -->
+            <section id="new-post" class="content-section">
+                <h2 class="section-title">Create New Post</h2>
+                <form id="post-form" class="post-form">
+                    <div class="form-group">
+                        <label for="post-title">Title</label>
+                        <input type="text" id="post-title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="post-content">Content</label>
+                        <textarea id="post-content" name="content" rows="10" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="post-tags">Tags (comma separated)</label>
+                        <input type="text" id="post-tags" name="tags" placeholder="technology, life, thoughts">
+                    </div>
+                    <button type="submit" class="submit-btn">Publish Post</button>
+                </form>
+            </section>
+
+            <!-- About Section -->
+            <section id="about" class="content-section">
+                <h2 class="section-title">About This Blog</h2>
+                <div class="about-content">
+                    <p>Welcome to my personal corner of the internet. This is where I share my thoughts, experiences, and whatever crosses my mind.</p>
+                    <div class="blog-stats">
+                        <div class="stat">
+                            <span class="stat-number" id="total-posts">0</span>
+                            <span class="stat-label">Posts</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number" id="total-words">0</span>
+                            <span class="stat-label">Words</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="blog-footer">
+            <p>&copy; 2024 My Retro Blog. Built with HTML, CSS, and JavaScript.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
