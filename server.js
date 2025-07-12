@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 app.use(express.static('public'));
 
 // Database file
-const DB_FILE = 'posts.json';
+const DB_FILE = path.join(__dirname, 'posts.json');
 
 // Initialize database if it doesn't exist
 function initializeDB() {
