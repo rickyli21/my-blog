@@ -29,7 +29,26 @@ const DB_NAME = 'blog';
 const COLLECTION_NAME = 'posts';
 
 // Fallback in-memory storage for when MongoDB is not available
-let inMemoryPosts = [];
+let inMemoryPosts = [
+    {
+        id: Date.now() - 2,
+        title: "Welcome to Our Shared Blog",
+        content: "This is a shared blog where everyone can post and see each other's posts.\n\nFeel free to share your thoughts, experiences, and ideas here. This is a community space for everyone to contribute to.\n\nHappy blogging!",
+        author: "Admin",
+        tags: ["welcome", "community", "blogging"],
+        date: new Date(Date.now() - 86400000).toISOString(),
+        wordCount: 45
+    },
+    {
+        id: Date.now() - 1,
+        title: "The Power of Shared Stories",
+        content: "When we share our stories, we create connections that transcend boundaries.\n\nThis blog is a space where diverse voices can come together, share experiences, and learn from each other.\n\nWhat story will you share today?",
+        author: "Admin",
+        tags: ["stories", "community", "connection"],
+        date: new Date(Date.now() - 43200000).toISOString(),
+        wordCount: 38
+    }
+];
 let isMongoConnected = false;
 
 // Connect to MongoDB
@@ -299,9 +318,23 @@ app.get('/health', (req, res) => {
 // Initialize database and start server
 connectToMongo().then(() => {
     app.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`);
-        console.log(`Your shared blog is now live with MongoDB!`);
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+        console.log(`📊 MongoDB Status: ${isMongoConnected ? '✅ Connected' : '❌ Using Fallback Storage'}`);
+        console.log(`🌐 Your shared blog is now live!`);
+        console.log(`🔍 Health check available at: http://localhost:${PORT}/health`);
+        console.log(`📝 API endpoints:`);
+        console.log(`   GET  /api/posts - Get all posts`);
+        console.log(`   POST /api/posts - Create new post`);
+        console.log(`   PUT  /api/posts/:id - Update post`);
+        console.log(`   DELETE /api/posts/:id - Delete post`);
+        console.log(`   GET  /api/stats - Get blog statistics`);
     });
 }).catch(error => {
-    console.error('Failed to connect to MongoDB:', error);
+    console.error('❌ Failed to connect to MongoDB:', error);
+    // Start server anyway with fallback storage
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running on http://localhost:${PORT} (Fallback Mode)`);
+        console.log(`⚠️  Using in-memory storage - posts will be lost on restart`);
+        console.log(`🌐 Your blog is still functional!`);
+    });
 }); 
