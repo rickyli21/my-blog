@@ -3,84 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Blog</title>
+    <title>RetroReddit - the front page of the retro internet</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <header class="blog-header">
-            <h1 class="blog-title">My Blog</h1>
-            <p class="blog-subtitle">Random walks</p>
-        </header>
+    <!-- CRT Scanline Overlay -->
+    <div class="crt-overlay"></div>
 
-        <nav class="blog-nav">
-            <button class="nav-btn active" data-section="timeline">Timeline</button>
-            <button class="nav-btn" data-section="new-post">New Post</button>
-            <button class="nav-btn" data-section="about">About</button>
-        </nav>
-
-        <main class="blog-content">
-            <!-- Timeline Section -->
-            <section id="timeline" class="content-section active">
-                <h2 class="section-title">Latest Posts</h2>
-                <div id="posts-container" class="posts-container">
-                    <!-- Posts will be dynamically added here -->
+    <!-- Top Banner Bar -->
+    <header class="top-bar">
+        <div class="top-bar-inner">
+            <div class="logo-area">
+                <div class="logo-icon">R</div>
+                <div class="logo-text">
+                    <h1>RetroReddit</h1>
+                    <span class="tagline">the front page of the retro internet</span>
                 </div>
-            </section>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="search retro reddit...">
+                <button id="search-btn" class="pixel-btn">GO</button>
+            </div>
+            <div class="user-area">
+                <span class="username" id="current-user">guest_user</span>
+                <span class="karma-display" id="user-karma" title="karma">0 pts</span>
+            </div>
+        </div>
+    </header>
 
-            <!-- New Post Section -->
-            <section id="new-post" class="content-section">
-                <h2 class="section-title">Create New Post</h2>
-                <form id="post-form" class="post-form">
-                    <div class="form-group">
-                        <label for="post-title">Title</label>
-                        <input type="text" id="post-title" name="title" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="post-author">Your Name (optional)</label>
-                        <input type="text" id="post-author" name="author" placeholder="Anonymous">
-                    </div>
-                    <div class="form-group">
-                        <label for="post-content">Content</label>
-                        <textarea id="post-content" name="content" rows="10" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="post-tags">Tags (comma separated)</label>
-                        <input type="text" id="post-tags" name="tags" placeholder="technology, life, thoughts">
-                    </div>
-                    <button type="submit" class="submit-btn">Publish Post</button>
-                </form>
-            </section>
+    <!-- Navigation Tabs -->
+    <nav class="tab-bar">
+        <div class="tab-bar-inner">
+            <button class="tab-btn active" data-sort="hot">HOT</button>
+            <button class="tab-btn" data-sort="new">NEW</button>
+            <button class="tab-btn" data-sort="top">TOP</button>
+            <button class="tab-btn" data-sort="controversial">CONTROVERSIAL</button>
+            <div class="tab-spacer"></div>
+            <button class="tab-btn submit-tab" id="show-submit">+ SUBMIT POST</button>
+        </div>
+    </nav>
 
-            <!-- About Section -->
-            <section id="about" class="content-section">
-                <h2 class="section-title">About This Blog</h2>
-                <div class="about-content">
-                    <p>Welcome to our shared community blog! This is a space where everyone can contribute their thoughts, experiences, and ideas.</p>
-                    <p>All posts are shared publicly and visible to everyone who visits this blog. Feel free to add your voice to the conversation!</p>
-                    <div class="blog-stats">
-                        <div class="stat">
-                            <span class="stat-number" id="total-posts">0</span>
-                            <span class="stat-label">Posts</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number" id="total-words">0</span>
-                            <span class="stat-label">Words</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number" id="unique-authors">0</span>
-                            <span class="stat-label">Authors</span>
-                        </div>
-                    </div>
+    <!-- Main Layout -->
+    <div class="main-layout">
+        <!-- Left Content Area -->
+        <main class="content-area">
+            <!-- Current Subreddit Header -->
+            <div class="subreddit-header" id="subreddit-header">
+                <div class="subreddit-title">
+                    <span class="sub-prefix">r/</span><span id="current-sub-name">all</span>
                 </div>
-            </section>
+                <div class="subreddit-desc" id="current-sub-desc">All posts from every board</div>
+            </div>
+
+            <!-- Posts Feed -->
+            <div id="posts-container" class="posts-feed">
+                <!-- Posts rendered by JS -->
+            </div>
+
+            <!-- Loading indicator -->
+            <div id="loading" class="loading-state" style="display:none;">
+                <div class="loading-dots">
+                    <span>.</span><span>.</span><span>.</span> LOADING <span>.</span><span>.</span><span>.</span>
+                </div>
+            </div>
         </main>
 
-        <footer class="blog-footer">
-            <p>&copy; 2024 My Blog. Built with HTML, CSS, JavaScript, and Node.js.</p>
-        </footer>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Submit Post Box -->
+            <div class="sidebar-box submit-box" id="submit-box">
+                <div class="sidebar-box-header">SUBMIT A POST</div>
+                <form id="post-form" class="submit-form">
+                    <div class="form-row">
+                        <label for="post-subreddit">Board:</label>
+                        <select id="post-subreddit" name="subreddit">
+                            <option value="general">r/general</option>
+                            <option value="technology">r/technology</option>
+                            <option value="creative">r/creative</option>
+                            <option value="gaming">r/gaming</option>
+                            <option value="random">r/random</option>
+                            <option value="meta">r/meta</option>
+                            <option value="showoff">r/showoff</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="post-author">Username:</label>
+                        <input type="text" id="post-author" name="author" placeholder="anonymous" maxlength="20">
+                    </div>
+                    <div class="form-row">
+                        <label for="post-title">Title:</label>
+                        <input type="text" id="post-title" name="title" required maxlength="300" placeholder="An interesting title">
+                    </div>
+                    <div class="form-row">
+                        <label for="post-content">Body:</label>
+                        <textarea id="post-content" name="content" rows="6" required placeholder="What's on your mind?"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <label for="post-tags">Tags:</label>
+                        <input type="text" id="post-tags" name="tags" placeholder="comma, separated, tags">
+                    </div>
+                    <button type="submit" class="pixel-btn submit-btn" id="submit-post-btn">SUBMIT</button>
+                </form>
+            </div>
+
+            <!-- Boards List -->
+            <div class="sidebar-box">
+                <div class="sidebar-box-header">BOARDS</div>
+                <ul class="subreddit-list" id="subreddit-list">
+                    <!-- Populated by JS -->
+                </ul>
+            </div>
+
+            <!-- Community Stats -->
+            <div class="sidebar-box">
+                <div class="sidebar-box-header">COMMUNITY STATS</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-val" id="total-posts">0</span>
+                        <span class="stat-lbl">posts</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-val" id="total-comments">0</span>
+                        <span class="stat-lbl">comments</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-val" id="unique-authors">0</span>
+                        <span class="stat-lbl">users</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-val" id="total-upvotes">0</span>
+                        <span class="stat-lbl">upvotes</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Site Info -->
+            <div class="sidebar-box">
+                <div class="sidebar-box-header">ABOUT</div>
+                <div class="about-text">
+                    <p>Welcome to <strong>RetroReddit</strong>, a community board styled after the golden age of the internet.</p>
+                    <p>Post, vote, and comment. Be excellent to each other.</p>
+                    <div class="retro-badge">EST. 2024</div>
+                </div>
+            </div>
+
+            <!-- Keyboard Shortcuts -->
+            <div class="sidebar-box">
+                <div class="sidebar-box-header">SHORTCUTS</div>
+                <div class="shortcuts-list">
+                    <div class="shortcut"><kbd>Ctrl</kbd>+<kbd>N</kbd> New post</div>
+                    <div class="shortcut"><kbd>J</kbd> Next post</div>
+                    <div class="shortcut"><kbd>K</kbd> Prev post</div>
+                    <div class="shortcut"><kbd>A</kbd> Upvote</div>
+                    <div class="shortcut"><kbd>Z</kbd> Downvote</div>
+                </div>
+            </div>
+        </aside>
     </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-links">
+                <span>RetroReddit &copy; 2024</span>
+                <span class="separator">|</span>
+                <span>Built with HTML, CSS, JS &amp; Node.js</span>
+                <span class="separator">|</span>
+                <span class="blink-text">You are visitor #<span id="visitor-count">1337</span></span>
+            </div>
+            <div class="footer-ascii">
+[ ====== RETRO REDDIT ====== ]
+            </div>
+        </div>
+    </footer>
 
     <script src="script.js"></script>
 </body>
